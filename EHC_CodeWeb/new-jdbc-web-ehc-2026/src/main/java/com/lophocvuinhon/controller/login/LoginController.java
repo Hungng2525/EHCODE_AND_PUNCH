@@ -1,0 +1,81 @@
+package com.lophocvuinhon.controller.login;
+
+import java.io.IOException;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import com.lophocvuinhon.dao.iUserDAO;
+import com.lophocvuinhon.dao.impl.UserDAO;
+import com.lophocvuinhon.model.UserModel;
+
+// @WebServlet là cái biển hiệu. Nó bảo Server: "Hễ ai gọi /login thì trỏ vào đây"
+@WebServlet(urlPatterns = {"/login"})
+public class LoginController extends HttpServlet {
+	
+	private static final long serialVersionUID = 1L;
+
+	// Hàm này chạy khi người dùng truy cập link (Gõ Enter trên trình duyệt)
+	@Override
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// Nhiệm vụ duy nhất: Chuyển hướng sang trang giao diện JSP
+		RequestDispatcher rd = request.getRequestDispatcher("/views/login.jsp");
+		rd.forward(request, response);
+	}
+
+	// Hàm này chạy khi người dùng bấm nút "Submit" trên form
+	@Override
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// lấy dữ liệu từ form
+		String usernameForm = request.getParameter("username");
+		String passwordFrom = request.getParameter("password"); 
+		//khai báo để kiểm tra username và pass
+		iUserDAO userDAO = new UserDAO();
+		UserModel userModel = userDAO.findByUserName(usernameForm);
+		
+		//logic xac thuc
+		String alertMsg = "";
+		
+		if(userModel != null) {
+			// có user, giờ check pass
+			if(userModel.getPassword().equals(passwordFrom)) {
+				//login success
+				
+				// lưu thông tin vào Session
+				HttpSession session = request.getSession();
+				session.setAttribute("USERMODEL", userModel); // lưu cả cục userModel vào 
+				// sau khi lưu Session xong
+				
+				// LOGIC PHÂN QUYỀN:
+				if (userModel.getRoleCode() != null && userModel.getRoleCode().equals("TEACHER")) {
+				    // Nếu là Giáo viên -> Vào trang quản lý của GV
+				    response.sendRedirect(request.getContextPath() + "/teacher-home");
+				} else if (userModel.getRoleCode() != null && userModel.getRoleCode().equals("STUDENT")) {
+				    // Nếu là Sinh viên -> Vào trang học tập
+				    response.sendRedirect(request.getContextPath() + "/trang-chu");
+				} else {
+				    // Trường hợp khác (lỗi data) -> Đẩy tạm về trang chủ
+				    response.sendRedirect(request.getContextPath() + "/login?message=role_error");
+				}
+
+				return;
+				
+			} else {
+				alertMsg = "Wrong password!";
+			}
+		}else {
+			alertMsg = "Unavailable or banned account.";
+		}
+		
+		//dang nhap that bai
+		//gui thong bao loi ve lai trang jsp login
+		request.setAttribute("message", alertMsg);
+		RequestDispatcher rd = request.getRequestDispatcher("/views/login.jsp");
+		rd.forward(request, response);
+	}
+}

@@ -1,0 +1,198 @@
+package com.lophocvuinhon.dao.impl;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.lophocvuinhon.dao.iUserDAO;
+import com.lophocvuinhon.model.UserModel;
+
+public class UserDAO implements iUserDAO {
+
+	public Connection getConnection() {
+		try {
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			String url = "jdbc:mysql://localhost:3306/ehcodeandpunch2026";
+			String user = "root";
+			String password = "hungnguyen";
+			return DriverManager.getConnection(url, user, password);
+		} catch (ClassNotFoundException | SQLException e) {
+			return null;
+		}
+	}
+
+	@Override
+	public List<UserModel> findAll() {
+		List<UserModel> results = new ArrayList<>();
+		String sql = "SELECT * FROM users";
+
+		Connection connection = null;
+		PreparedStatement statement = null;
+		ResultSet resultSet = null;
+		try {
+			connection = getConnection();
+			// ktra có kết nối mới đi tiếp
+			if (connection != null) {
+				statement = connection.prepareStatement(sql);
+				// nếu có điều kiện where thì phải có công đoạn init
+				// parameter nên chưa dùng tới
+				resultSet = statement.executeQuery();
+				// dùng prepared để truyền lệnh sql vào,
+				// result set để thực thi lệnh sql
+				// giờ result set như 1 bảng sql, cần dùng một
+				// vòng lặp để print các thông tin ra.
+				while (resultSet.next()) {
+					// resultSet.next() sẽ ktra nếu trong resultSet
+					// có Obj != null thì mới get data lên được
+					UserModel user = new UserModel();
+					user.setId(resultSet.getLong("id"));
+					user.setUserName(resultSet.getString("username"));
+					user.setPassword(resultSet.getString("password"));
+					user.setFullName(resultSet.getString("full_name"));
+					user.setPhone(resultSet.getString("phone"));
+					user.setEmail(resultSet.getString("email"));
+					user.setStatus(resultSet.getString("status"));
+					user.setCreatedAt(resultSet.getTimestamp("created_at"));
+					user.setUpdateAt(resultSet.getTimestamp("updated_at"));
+					results.add(user);
+				}
+			}
+			return results;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+				if (resultSet != null) {
+					resultSet.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return results;
+	}
+
+	public UserModel findByUserName(String username) {
+		UserModel results = null;
+		String sql = "SELECT * FROM users WHERE username = ? AND status = 'active'";
+		Connection connection = null;
+		PreparedStatement statement = null;
+		ResultSet resultSet = null;
+		try {
+			connection = getConnection();
+			// ktra có kết nối mới đi tiếp
+			if (connection != null) {
+				statement = connection.prepareStatement(sql);
+				// nếu có điều kiện where thì phải có công đoạn init
+				// parameter nên chưa dùng tới
+				statement.setString(1, username);
+				resultSet = statement.executeQuery();
+				// dùng prepared để truyền lệnh sql vào,
+				// result set để thực thi lệnh sql
+				// giờ result set như 1 bảng sql, cần dùng một
+				// vòng lặp để print các thông tin ra.
+				if (resultSet.next()) {
+					results = new UserModel();
+					// resultSet.next() sẽ ktra nếu trong resultSet
+					// có Obj != null thì mới get data lên được
+					UserModel user = new UserModel();
+					user.setId(resultSet.getLong("id"));
+					user.setUserName(resultSet.getString("username"));
+					user.setPassword(resultSet.getString("password"));
+					user.setFullName(resultSet.getString("full_name"));
+					user.setPhone(resultSet.getString("phone"));
+					user.setEmail(resultSet.getString("email"));
+					user.setStatus(resultSet.getString("status"));
+					user.setCreatedAt(resultSet.getTimestamp("created_at"));
+					user.setUpdateAt(resultSet.getTimestamp("updated_at"));
+				}
+			}
+			return results;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		} finally {
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+				if (resultSet != null) {
+					resultSet.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public Long save(UserModel userModel) {
+		Long id = null;
+		String sql = "INSERT INTO users(username, password, full_name, phone, email, updated_at) VALUES (?, ?, ?, ?, ?, ?)";
+		Connection connection = null;
+		PreparedStatement statement = null;
+		ResultSet resultSet = null;
+		try {
+			connection = getConnection();
+			if (connection != null) {
+				connection.setAutoCommit(false);
+				// tắt auto commit để quản lí transaction thù công
+				statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+				statement.setString(1, userModel.getUserName());
+				statement.setString(2, userModel.getPassword());
+				statement.setString(3, userModel.getFullName());
+				statement.setString(4, userModel.getPhone());
+				statement.setString(5, userModel.getEmail());
+				statement.setTimestamp(6, userModel.getUpdateAt());
+				statement.executeUpdate();
+				resultSet = statement.getGeneratedKeys();
+				// trả về số dòng ảnh hưởng
+				if (resultSet.next()) {
+					id = resultSet.getLong(1);
+					// lấy giá trị ở cột đầu tiên
+				}
+				connection.commit();
+				// lưu thay đổi
+
+			}
+		} catch (SQLException e) {
+			if (connection != null) {
+	            try {
+	                connection.rollback();
+	            } catch (SQLException e1) {
+	                e1.printStackTrace();
+	            }
+	        }
+	        e.printStackTrace();
+		} finally {
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+				if (resultSet != null) {
+					resultSet.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return id;
+	}
+
+}
