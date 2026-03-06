@@ -11,10 +11,17 @@ Code in my project: **Java, MySql.**
   + Sinh viên có thể upload bài làm tương ứng với bài tập được giao. Chỉ giáo viên mới thấy.
 
 **Database Shema**
+
 users(id, username, password, full_name, phone, email, status, created_at, updated_at)
+
 user_roles(user_id, role_id)
+
 roles(id, code, name)
+
 teacher_profiles(user_id, teacher_code, department)
+
 student_profiles(user_id, student_code)
+
 assignments(id, title, description, file_path, created_by_id, created_at)
+
 submissions(id, assignment_id, student_id, file_path, submitted_at, grade, teacher_comment)
