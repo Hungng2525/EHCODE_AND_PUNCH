@@ -9,6 +9,7 @@ Code in my project: **Java, MySql.**
 * Chức năng giao bài, trả bài
   + Giáo viên upload file bài tập lên. Các sinh viên có thể xem danh sách bài tập và tải file bài tập về.
   + Sinh viên có thể upload bài làm tương ứng với bài tập được giao. Chỉ giáo viên mới thấy.
+
 **Database Shema**
 users(id, username, password, full_name, phone, email, status, created_at, updated_at)
 user_roles(user_id, role_id)
